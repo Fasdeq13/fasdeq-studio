@@ -1,0 +1,20 @@
+id = "zig-language-support"
+name = "Zig Language Support"
+version = "0.1.0"
+author = "Fasdeq Studio Community"
+description = "Adds basic syntax recognition for the Zig programming language."
+entry = "zig_language.wasm"
+
+[permissions]
+network = false
+filesystem = false
+process_spawn = false
+
+[[contributes.languages]]
+id = "zig"
+extensions = ["zig"]
+syntax_file = "zig.sublime-syntax"
+
+[[contributes.commands]]
+id = "zig.formatFile"
+title = "Zig: Format Current File"

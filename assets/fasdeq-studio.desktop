@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Fasdeq Studio
+Comment=Low-level development IDE for C, C++, Assembler and Rust
+Exec=fasdeq-studio %F
+Icon=fasdeq-studio
+Terminal=false
+Categories=Development;IDE;
+MimeType=inode/directory;
+StartupWMClass=fasdeq-studio

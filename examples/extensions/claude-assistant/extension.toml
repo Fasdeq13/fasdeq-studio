@@ -1,0 +1,24 @@
+id = "claude-assistant"
+name = "Claude Assistant"
+version = "0.1.0"
+author = "Fasdeq Studio Community"
+description = "Ask Claude questions about your code, get explanations for assembly instructions and error messages directly inside the IDE."
+entry = "claude_assistant.wasm"
+
+[permissions]
+network = true
+filesystem = false
+process_spawn = false
+
+[[contributes.commands]]
+id = "claude.explainSelection"
+title = "Claude: Explain Selected Code"
+
+[[contributes.commands]]
+id = "claude.fixError"
+title = "Claude: Suggest a Fix for This Error"
+
+[[contributes.panels]]
+id = "claude.chat"
+title = "Claude Chat"
+icon = "chat-bubble"

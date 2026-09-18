@@ -1,0 +1,18 @@
+:root {
+    --fasdeq-background: #0d1117;
+    --fasdeq-panel: #161b22;
+    --fasdeq-panel-alt: #1c2229;
+    --fasdeq-accent: #58a6ff;
+    --fasdeq-accent-hover: #79c0ff;
+    --fasdeq-text-primary: #e6edf3;
+    --fasdeq-text-secondary: #b1bac4;
+    --fasdeq-text-muted: #6e7681;
+    --fasdeq-border: #30363d;
+    --fasdeq-error: #f85149;
+    --fasdeq-warning: #d29922;
+    --fasdeq-success: #3fb950;
+    --fasdeq-selection: #264f78;
+    --fasdeq-editor-bg: #0d1117;
+    --fasdeq-editor-gutter: #10151c;
+    --fasdeq-editor-cursor-line: #161b22;
+}

@@ -1,0 +1,37 @@
+[package]
+name = "fasdeq_studio"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Fasdeq Studio - a low level development IDE for C, C++, Assembler and Rust"
+authors = ["Fasdeq Studio Contributors"]
+
+[[bin]]
+name = "fasdeq-studio"
+path = "src/main.rs"
+
+[dependencies]
+eframe = { version = "0.28", default-features = false, features = ["default_fonts", "glow", "persistence", "wayland", "x11"] }
+egui = "0.28"
+syntect = "5.2"
+capstone = "0.12"
+goblin = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+walkdir = "2"
+rfd = "0.14"
+dirs = "5"
+which = "6"
+anyhow = "1"
+image = { version = "0.25", default-features = false, features = ["png"] }
+chrono = "0.4"
+wasmtime = "24"
+git2 = "0.19"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
