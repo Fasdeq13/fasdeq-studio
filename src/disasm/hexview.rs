@@ -1,3 +1,20 @@
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ByteKind {
+    Null,
+    PrintableAscii,
+    Whitespace,
+    ControlOrHigh,
+}
+
+pub fn classify_byte(byte: u8) -> ByteKind {
+    match byte {
+        0x00 => ByteKind::Null,
+        0x09 | 0x0a | 0x0d | 0x20 => ByteKind::Whitespace,
+        0x21..=0x7e => ByteKind::PrintableAscii,
+        _ => ByteKind::ControlOrHigh,
+    }
+}
+
 pub struct HexRow {
     pub offset: usize,
     pub bytes: Vec<u8>,

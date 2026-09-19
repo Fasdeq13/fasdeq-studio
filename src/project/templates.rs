@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use crate::icons;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OsBitness {
@@ -84,13 +85,13 @@ impl ProjectTemplate {
 
     pub fn icon(&self) -> &'static str {
         match self {
-            ProjectTemplate::OsCAsm(_) => "🖥",
-            ProjectTemplate::OsCpp(_) => "⚙",
-            ProjectTemplate::OsRust => "🦀",
-            ProjectTemplate::EmptyC => "🔧",
-            ProjectTemplate::EmptyCpp => "🔩",
-            ProjectTemplate::EmptyRust => "📦",
-            ProjectTemplate::EmptyAsm => "🧮",
+            ProjectTemplate::OsCAsm(_) => icons::CUBE,
+            ProjectTemplate::OsCpp(_) => icons::GEAR_SIX,
+            ProjectTemplate::OsRust => icons::FILE_RS,
+            ProjectTemplate::EmptyC => icons::FILE_C,
+            ProjectTemplate::EmptyCpp => icons::FILE_CPP,
+            ProjectTemplate::EmptyRust => icons::CUBE,
+            ProjectTemplate::EmptyAsm => icons::FILE_CODE,
         }
     }
 

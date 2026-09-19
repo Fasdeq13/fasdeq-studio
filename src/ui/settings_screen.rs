@@ -16,12 +16,15 @@ pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
         .show(ctx, |ui| {
             ui.label(egui::RichText::new("Appearance").strong());
             ui.add_space(6.0);
+            let mut changed = false;
             ui.horizontal_wrapped(|ui| {
                 let themes = app.available_themes.clone();
                 for theme in themes {
                     let selected = app.theme.name == theme.name;
                     if ui.selectable_label(selected, &theme.name).clicked() {
                         app.theme = theme;
+                        app.custom_theme_path = None;
+                        changed = true;
                     }
                 }
             });
@@ -32,7 +35,9 @@ pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
                     match FasdeqTheme::load_from_file(&path) {
                         Ok(theme) => {
                             app.theme = theme;
+                            app.custom_theme_path = Some(path);
                             app.theme_import_error = None;
+                            changed = true;
                         }
                         Err(e) => {
                             app.theme_import_error = Some(e.to_string());
@@ -52,7 +57,9 @@ pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
             ui.add_space(6.0);
             ui.horizontal(|ui| {
                 ui.label("Font size:");
-                ui.add(egui::Slider::new(&mut app.font_size, 10.0..=24.0));
+                if ui.add(egui::Slider::new(&mut app.font_size, 10.0..=24.0)).changed() {
+                    changed = true;
+                }
             });
 
             ui.add_space(8.0);
@@ -60,11 +67,17 @@ pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
                 ui.label("Keybindings:");
                 if ui.selectable_label(app.keymap == KeymapStyle::VsCode, "VSCode").clicked() {
                     app.keymap = KeymapStyle::VsCode;
+                    changed = true;
                 }
                 if ui.selectable_label(app.keymap == KeymapStyle::Vim, "Vim").clicked() {
                     app.keymap = KeymapStyle::Vim;
+                    changed = true;
                 }
             });
+
+            if changed {
+                app.save_preferences();
+            }
 
             ui.add_space(16.0);
             ui.separator();

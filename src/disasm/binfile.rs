@@ -12,6 +12,36 @@ impl SectionInfo {
     pub fn purpose(&self) -> &'static str {
         section_purpose(&self.name)
     }
+
+    pub fn category(&self) -> SectionCategory {
+        section_category(&self.name)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SectionCategory {
+    Code,
+    ReadOnlyData,
+    Data,
+    Uninitialized,
+    Debug,
+    Linking,
+    Other,
+}
+
+pub fn section_category(name: &str) -> SectionCategory {
+    match name {
+        ".text" | ".init" | ".fini" | ".plt" => SectionCategory::Code,
+        ".rodata" | ".rdata" | ".idata" | ".edata" => SectionCategory::ReadOnlyData,
+        ".data" | ".tls" => SectionCategory::Data,
+        ".bss" => SectionCategory::Uninitialized,
+        ".debug_info" | ".debug_line" | ".debug_str" | ".debug_abbrev" | ".comment"
+        | ".note.gnu.build-id" | ".eh_frame" => SectionCategory::Debug,
+        ".symtab" | ".strtab" | ".shstrtab" | ".dynsym" | ".dynstr" | ".dynamic"
+        | ".rel.text" | ".rela.text" | ".rel.data" | ".rela.data" | ".got" | ".got.plt"
+        | ".init_array" | ".fini_array" | ".reloc" | ".pdata" => SectionCategory::Linking,
+        _ => SectionCategory::Other,
+    }
 }
 
 pub fn section_purpose(name: &str) -> &'static str {

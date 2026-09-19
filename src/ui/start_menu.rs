@@ -1,5 +1,6 @@
 use crate::app::{AppScreen, FasdeqApp};
 use crate::project::OpenProject;
+use crate::icons;
 use eframe::egui;
 use std::path::PathBuf;
 
@@ -23,25 +24,29 @@ pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
             columns[0].vertical(|ui| {
                 ui.add_space(10.0);
                 ui.set_max_width(320.0);
-                if big_button(ui, "➕  New Project") {
+                if big_button(ui, &format!("{}  New Project", icons::PLUS_CIRCLE)) {
                     app.screen = AppScreen::NewProjectMenu;
                     app.new_project_name.clear();
                     app.selected_template = None;
                 }
                 ui.add_space(12.0);
-                if big_button(ui, "📂  Open Project") {
+                if big_button(ui, &format!("{}  Open Project", icons::FOLDER_NOTCH_OPEN)) {
                     if let Some(path) = rfd::FileDialog::new().pick_folder() {
                         app.open_project(OpenProject::from_path(path));
                     }
                 }
                 ui.add_space(12.0);
-                if big_button(ui, "🌐  Clone Repository") {
+                if big_button(ui, &format!("{}  Clone Repository", icons::GIT_BRANCH)) {
                     app.screen = AppScreen::CloneProject;
                     app.clone_url.clear();
                     app.clone_error = None;
                 }
                 ui.add_space(12.0);
-                if big_button(ui, "🚪  Exit") {
+                if big_button(ui, &format!("{}  Extensions", icons::PUZZLE_PIECE)) {
+                    app.screen = AppScreen::ExtensionsMenu;
+                }
+                ui.add_space(12.0);
+                if big_button(ui, &format!("{}  Exit", icons::SIGN_OUT)) {
                     std::process::exit(0);
                 }
 
@@ -82,7 +87,7 @@ pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
                                         ui.label(egui::RichText::new(format!("Last opened: {}", entry.last_opened)).weak().size(10.0));
                                     });
                                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                        if ui.small_button("✕").clicked() {
+                                        if ui.small_button(icons::X).clicked() {
                                             app.recent_projects.remove(&entry.path);
                                         }
                                         if ui.button("Open").clicked() {

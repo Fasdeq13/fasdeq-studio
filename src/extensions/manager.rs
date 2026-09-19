@@ -1,7 +1,7 @@
 use super::manifest::{discover_extensions, extensions_directory, InstalledExtension};
 use super::runtime::{drain_pending_calls, ExtensionRuntime, ExtensionState, HostCall};
 use std::path::PathBuf;
-use wasmtime::{Instance, Module, Store};
+use wasmtime::{Instance, Store};
 
 pub struct RunningExtension {
     pub id: String,

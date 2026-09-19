@@ -30,9 +30,26 @@ pub fn parse_gcc_output(output: &str) -> Vec<Diagnostic> {
 
 fn parse_gcc_line(line: &str) -> Option<Diagnostic> {
     let parts: Vec<&str> = line.splitn(4, ':').collect();
-    if parts.len() < 4 {
-        return None;
+
+    if parts.len() >= 4 {
+        if let Some(diag) = try_parse_four_part(&parts) {
+            return Some(diag);
+        }
     }
+
+    // NASM and some other assemblers use `file:line: severity: message`
+    // (three colon-separated parts, no column number).
+    let parts3: Vec<&str> = line.splitn(3, ':').collect();
+    if parts3.len() == 3 {
+        if let Some(diag) = try_parse_three_part(&parts3) {
+            return Some(diag);
+        }
+    }
+
+    None
+}
+
+fn try_parse_four_part(parts: &[&str]) -> Option<Diagnostic> {
     let file = PathBuf::from(parts[0]);
     let line_no: usize = parts[1].trim().parse().ok()?;
     let rest = parts[2].trim();
@@ -42,22 +59,7 @@ fn parse_gcc_line(line: &str) -> Option<Diagnostic> {
         (0, parts[3])
     };
 
-    let trimmed = severity_and_message.trim();
-    let (severity, message) = if let Some(m) = trimmed.strip_prefix(" error:") {
-        (Severity::Error, m.trim().to_string())
-    } else if let Some(m) = trimmed.strip_prefix("error:") {
-        (Severity::Error, m.trim().to_string())
-    } else if let Some(m) = trimmed.strip_prefix(" warning:") {
-        (Severity::Warning, m.trim().to_string())
-    } else if let Some(m) = trimmed.strip_prefix("warning:") {
-        (Severity::Warning, m.trim().to_string())
-    } else if let Some(m) = trimmed.strip_prefix(" note:") {
-        (Severity::Note, m.trim().to_string())
-    } else if let Some(m) = trimmed.strip_prefix("note:") {
-        (Severity::Note, m.trim().to_string())
-    } else {
-        return None;
-    };
+    let (severity, message) = extract_severity(severity_and_message)?;
 
     Some(Diagnostic {
         file,
@@ -66,6 +68,35 @@ fn parse_gcc_line(line: &str) -> Option<Diagnostic> {
         severity,
         message,
     })
+}
+
+fn try_parse_three_part(parts: &[&str]) -> Option<Diagnostic> {
+    let file = PathBuf::from(parts[0]);
+    let line_no: usize = parts[1].trim().parse().ok()?;
+    let (severity, message) = extract_severity(parts[2])?;
+
+    Some(Diagnostic {
+        file,
+        line: line_no,
+        column: 0,
+        severity,
+        message,
+    })
+}
+
+fn extract_severity(text: &str) -> Option<(Severity, String)> {
+    let trimmed = text.trim();
+    if let Some(m) = trimmed.strip_prefix("error:") {
+        Some((Severity::Error, m.trim().to_string()))
+    } else if let Some(m) = trimmed.strip_prefix("fatal error:") {
+        Some((Severity::Error, m.trim().to_string()))
+    } else if let Some(m) = trimmed.strip_prefix("warning:") {
+        Some((Severity::Warning, m.trim().to_string()))
+    } else if let Some(m) = trimmed.strip_prefix("note:") {
+        Some((Severity::Note, m.trim().to_string()))
+    } else {
+        None
+    }
 }
 
 pub fn parse_rustc_output(output: &str) -> Vec<Diagnostic> {

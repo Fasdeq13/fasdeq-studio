@@ -28,6 +28,7 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 chrono = "0.4"
 wasmtime = "24"
 git2 = "0.19"
+egui-phosphor = "0.6"
 
 [profile.release]
 opt-level = 3

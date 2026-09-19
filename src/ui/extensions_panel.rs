@@ -1,13 +1,30 @@
-use crate::app::FasdeqApp;
+use crate::app::{AppScreen, FasdeqApp};
+use crate::icons;
 use eframe::egui;
 
-pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
-    ui.label(egui::RichText::new("Extensions").size(16.0).strong());
+pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
+    app.apply_theme(ctx);
+
+    egui::TopBottomPanel::top("extensions_top").show(ctx, |ui| {
+        ui.horizontal(|ui| {
+            if ui.button(format!("{}  Back", icons::ARROW_LEFT)).clicked() {
+                app.screen = AppScreen::StartMenu;
+            }
+            ui.heading("Extensions");
+        });
+    });
+
+    egui::CentralPanel::default().show(ctx, |ui| {
+        draw_body(app, ui);
+    });
+}
+
+fn draw_body(app: &mut FasdeqApp, ui: &mut egui::Ui) {
     ui.label(egui::RichText::new("Extend Fasdeq Studio with new languages, themes, commands, panels, and AI assistant integrations such as Claude.").weak());
     ui.add_space(10.0);
 
     ui.horizontal(|ui| {
-        if ui.button("📁 Install from Folder").clicked() {
+        if ui.button(format!("{}  Install from Folder", icons::FOLDER_NOTCH_OPEN)).clicked() {
             if let Some(path) = rfd::FileDialog::new().pick_folder() {
                 if let Err(e) = app.extension_manager.install_from_local(&path) {
                     app.extension_install_error = Some(e.to_string());
@@ -16,7 +33,7 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
                 }
             }
         }
-        if ui.button("🔄 Refresh").clicked() {
+        if ui.button(format!("{}  Refresh", icons::ARROW_CLOCKWISE)).clicked() {
             app.extension_manager.refresh_installed();
         }
     });
@@ -25,7 +42,7 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.label("Git URL:");
         ui.text_edit_singleline(&mut app.extension_install_url);
-        if ui.button("Clone & Install").clicked() {
+        if ui.button(format!("{}  Clone & Install", icons::GIT_BRANCH)).clicked() {
             let url = app.extension_install_url.trim().to_string();
             if !url.is_empty() {
                 if let Err(e) = app.extension_manager.install_from_git(&url) {
@@ -84,10 +101,10 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
                         }
                     });
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button("Uninstall").clicked() {
+                        if ui.button(format!("{}  Uninstall", icons::TRASH)).clicked() {
                             to_uninstall = Some(ext.manifest.id.clone());
                         }
-                        if ui.button("Load").clicked() {
+                        if ui.button(format!("{}  Load", icons::DOWNLOAD)).clicked() {
                             to_load = Some(ext.manifest.id.clone());
                         }
                     });

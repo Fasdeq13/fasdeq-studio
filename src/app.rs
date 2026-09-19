@@ -1,11 +1,12 @@
 use crate::disasm::binfile::BinaryInfo;
-use crate::disasm::engine::{Architecture, DisasmInstruction};
+use crate::disasm::engine::DisasmInstruction;
 use crate::editor::buffer::EditorBuffer;
 use crate::editor::diagnostics::Diagnostic;
 use crate::editor::highlight::HighlightEngine;
 use crate::editor::keybindings::{KeymapStyle, VimState};
 use crate::extensions::manager::ExtensionManager;
 use crate::project::templates::ProjectTemplate;
+use crate::project::tree::FileTree;
 use crate::project::{OpenProject, RecentProjects};
 use crate::theme::FasdeqTheme;
 use crate::toolchain::config::ToolchainConfig;
@@ -19,6 +20,7 @@ pub enum AppScreen {
     StartMenu,
     NewProjectMenu,
     CloneProject,
+    ExtensionsMenu,
     Workspace,
 }
 
@@ -28,7 +30,7 @@ pub enum WorkspaceTab {
     Disassembler,
     InstructionReference,
     BuildOutput,
-    Extensions,
+    NumberBaseConverter,
 }
 
 pub struct FasdeqApp {
@@ -54,8 +56,7 @@ pub struct FasdeqApp {
     pub highlight_engine: HighlightEngine,
     pub open_buffers: Vec<EditorBuffer>,
     pub active_buffer: Option<usize>,
-    pub file_tree_root: Option<PathBuf>,
-    pub file_tree_files: Vec<PathBuf>,
+    pub file_tree: Option<FileTree>,
 
     pub diagnostics: Vec<Diagnostic>,
     pub build_stdout: String,
@@ -73,6 +74,11 @@ pub struct FasdeqApp {
     pub show_settings: bool,
     pub theme_import_error: Option<String>,
     pub reference_search: String,
+    pub numbase_binary: String,
+    pub numbase_octal: String,
+    pub numbase_decimal: String,
+    pub numbase_hex: String,
+    pub custom_theme_path: Option<PathBuf>,
 }
 
 impl FasdeqApp {
@@ -83,14 +89,31 @@ impl FasdeqApp {
         } else {
             AppScreen::FirstRunWizard
         };
+        let preferences = crate::settings::UserPreferences::load();
+        let theme = if toolchain_config.setup_completed {
+            preferences.resolve_theme()
+        } else {
+            FasdeqTheme::dark_default()
+        };
+        let keymap = if toolchain_config.setup_completed {
+            preferences.keymap
+        } else {
+            KeymapStyle::VsCode
+        };
+        let font_size = if toolchain_config.setup_completed {
+            preferences.font_size
+        } else {
+            15.0
+        };
+        let custom_theme_path = preferences.custom_theme_path.clone();
 
         Self {
             screen,
             wizard: WizardState::new(),
             toolchain_config,
-            theme: FasdeqTheme::dark_default(),
+            theme,
             available_themes: FasdeqTheme::built_in_themes(),
-            keymap: KeymapStyle::VsCode,
+            keymap,
             vim_state: VimState::default(),
 
             recent_projects: RecentProjects::load(),
@@ -107,8 +130,7 @@ impl FasdeqApp {
             highlight_engine: HighlightEngine::new(),
             open_buffers: Vec::new(),
             active_buffer: None,
-            file_tree_root: None,
-            file_tree_files: Vec::new(),
+            file_tree: None,
 
             diagnostics: Vec::new(),
             build_stdout: String::new(),
@@ -130,16 +152,30 @@ impl FasdeqApp {
             extension_install_url: String::new(),
             extension_install_error: None,
 
-            font_size: 15.0,
+            font_size,
             show_settings: false,
             theme_import_error: None,
             reference_search: String::new(),
+            numbase_binary: "0".to_string(),
+            numbase_octal: "0".to_string(),
+            numbase_decimal: "0".to_string(),
+            numbase_hex: "0".to_string(),
+            custom_theme_path,
         }
     }
 
+    pub fn save_preferences(&self) {
+        crate::settings::UserPreferences::from_current(
+            &self.theme,
+            self.custom_theme_path.clone(),
+            self.keymap,
+            self.font_size,
+        )
+        .save();
+    }
+
     pub fn open_project(&mut self, project: OpenProject) {
-        self.file_tree_root = Some(project.root.clone());
-        self.file_tree_files = crate::project::list_files_recursive(&project.root);
+        self.file_tree = Some(FileTree::new(project.root.clone()));
         self.recent_projects
             .push(project.name.clone(), project.root.clone());
         self.current_project = Some(project);
@@ -178,6 +214,15 @@ impl FasdeqApp {
         }
     }
 
+    pub fn close_buffers_under(&mut self, path: &std::path::Path) {
+        self.open_buffers.retain(|b| !b.path.starts_with(path));
+        self.active_buffer = if self.open_buffers.is_empty() {
+            None
+        } else {
+            Some(self.active_buffer.unwrap_or(0).min(self.open_buffers.len() - 1))
+        };
+    }
+
     pub fn save_active_buffer(&mut self) {
         if let Some(buffer) = self.active_buffer_mut() {
             let _ = buffer.save();
@@ -202,6 +247,23 @@ impl FasdeqApp {
         }
         self.building = false;
         self.workspace_tab = WorkspaceTab::BuildOutput;
+    }
+
+    pub fn diagnostics_for(&self, path: &std::path::Path) -> Vec<&Diagnostic> {
+        self.diagnostics
+            .iter()
+            .filter(|d| {
+                path.ends_with(&d.file) || d.file.ends_with(path.file_name().unwrap_or_default())
+            })
+            .collect()
+    }
+
+    pub fn set_numbase_value(&mut self, value: u64) {
+        use crate::editor::numbase::{format_value, NumberBase};
+        self.numbase_binary = format_value(value, NumberBase::Binary, false);
+        self.numbase_octal = format_value(value, NumberBase::Octal, false);
+        self.numbase_decimal = format_value(value, NumberBase::Decimal, false);
+        self.numbase_hex = format_value(value, NumberBase::Hexadecimal, false);
     }
 
     pub fn load_binary_for_disasm(&mut self, path: PathBuf) {

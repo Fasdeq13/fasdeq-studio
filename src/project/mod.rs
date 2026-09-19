@@ -1,4 +1,5 @@
 pub mod templates;
+pub mod tree;
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -92,6 +93,7 @@ pub fn clone_repository(url: &str, destination: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn list_files_recursive(root: &Path) -> Vec<PathBuf> {
     walkdir::WalkDir::new(root)
         .into_iter()

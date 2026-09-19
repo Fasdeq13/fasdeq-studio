@@ -1,0 +1,77 @@
+%YAML 1.2
+---
+name: Assembly x86
+file_extensions:
+  - asm
+  - s
+  - nasm
+scope: source.asm
+
+contexts:
+  main:
+    - include: comments
+    - include: strings
+    - include: numbers
+    - include: directives
+    - include: registers
+    - include: instructions
+    - include: labels
+
+  comments:
+    - match: ';.*$'
+      scope: comment.line.semicolon.asm
+    - match: '#.*$'
+      scope: comment.line.number-sign.asm
+
+  strings:
+    - match: '"'
+      scope: punctuation.definition.string.begin.asm
+      push: double-string
+    - match: "'"
+      scope: punctuation.definition.string.begin.asm
+      push: single-string
+
+  double-string:
+    - meta_scope: string.quoted.double.asm
+    - match: '\\.'
+      scope: constant.character.escape.asm
+    - match: '"'
+      scope: punctuation.definition.string.end.asm
+      pop: true
+
+  single-string:
+    - meta_scope: string.quoted.single.asm
+    - match: '\\.'
+      scope: constant.character.escape.asm
+    - match: "'"
+      scope: punctuation.definition.string.end.asm
+      pop: true
+
+  numbers:
+    - match: '\b0[xX][0-9A-Fa-f]+\b'
+      scope: constant.numeric.hex.asm
+    - match: '\b[0-9A-Fa-f]+[hH]\b'
+      scope: constant.numeric.hex.asm
+    - match: '\b0[bB][01]+\b'
+      scope: constant.numeric.binary.asm
+    - match: '\b[01]+[bB]\b'
+      scope: constant.numeric.binary.asm
+    - match: '\b\d+\b'
+      scope: constant.numeric.integer.asm
+
+  directives:
+    - match: '(?i)^\s*\[?\b(org|bits|section|segment|global|extern|align|times|db|dw|dd|dq|dt|resb|resw|resd|resq|equ|include|incbin|struc|endstruc|%define|%macro|%endmacro|%include|%if|%endif|%ifdef|%else)\b\]?'
+      scope: keyword.control.directive.asm
+
+  registers:
+    - match: '(?i)\b(r[a-z]{2}|r[0-9]{1,2}[dwb]?|e[a-z]{2}|[a-d][lh]|[a-d]x|si|di|bp|sp|sil|dil|bpl|spl|cs|ds|es|fs|gs|ss|cr[0-9]|dr[0-9]|xmm[0-9]{1,2}|ymm[0-9]{1,2}|zmm[0-9]{1,2}|eflags|rflags|rip|eip)\b'
+      scope: variable.language.register.asm
+
+  instructions:
+    - match: '(?i)\b(mov|movzx|movsx|lea|push|pop|add|sub|imul|idiv|mul|div|inc|dec|neg|adc|sbb|cmp|test|and|or|xor|not|shl|shr|sar|rol|ror|jmp|je|jne|jg|jl|jge|jle|ja|jb|jae|jbe|jz|jnz|js|jns|jo|jno|jp|jnp|call|ret|retf|loop|loope|loopne|nop|int|syscall|sysenter|sysexit|hlt|cli|sti|in|out|lgdt|lidt|rdmsr|wrmsr|cpuid|lock|rep|repe|repne|cdq|cwd|cbw|cdqe|xchg|cmpxchg|enter|leave|pushfq|popfq|pushf|popf|bt|bts|btr|btc|movs|stos|lods|scas|cmps)\b'
+      scope: keyword.control.instruction.asm
+
+  labels:
+    - match: '^\s*([A-Za-z_.$][A-Za-z0-9_.$]*)\s*:'
+      captures:
+        1: entity.name.label.asm

@@ -1,4 +1,5 @@
 use crate::app::{AppScreen, FasdeqApp, WorkspaceTab};
+use crate::icons;
 use eframe::egui;
 
 pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
@@ -6,7 +7,7 @@ pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
 
     egui::TopBottomPanel::top("workspace_top").show(ctx, |ui| {
         ui.horizontal(|ui| {
-            if ui.button("← Projects").clicked() {
+            if ui.button(format!("{}  Projects", icons::ARROW_LEFT)).clicked() {
                 app.screen = AppScreen::StartMenu;
             }
             ui.separator();
@@ -17,18 +18,22 @@ pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
 
             ui.separator();
 
-            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::Editor, "📝 Editor");
-            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::Disassembler, "🔍 Binary Inspector");
-            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::InstructionReference, "📖 Reference");
-            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::BuildOutput, "🛠 Build");
-            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::Extensions, "🧩 Extensions");
+            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::Editor, format!("{}  Editor", icons::NOTE_PENCIL));
+            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::Disassembler, format!("{}  Binary Inspector", icons::MAGNIFYING_GLASS));
+            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::InstructionReference, format!("{}  Reference", icons::BOOK_OPEN_TEXT));
+            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::NumberBaseConverter, format!("{}  Base Converter", icons::HASH));
+            ui.selectable_value(&mut app.workspace_tab, WorkspaceTab::BuildOutput, format!("{}  Build", icons::WRENCH));
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.button("⚙ Settings").clicked() {
+                if ui.button(format!("{}  Settings", icons::GEAR)).clicked() {
                     app.show_settings = true;
                 }
-                if ui.button("▶ Build").clicked() {
+                if ui.button(format!("{}  Build", icons::PLAY)).clicked() {
                     app.run_build();
+                }
+                if app.keymap == crate::editor::keybindings::KeymapStyle::Vim {
+                    ui.separator();
+                    ui.label(egui::RichText::new(app.vim_state.mode_label()).monospace().strong());
                 }
             });
         });
@@ -48,7 +53,7 @@ pub fn draw(app: &mut FasdeqApp, ctx: &egui::Context) {
         WorkspaceTab::Disassembler => crate::ui::disasm_view::draw(app, ui),
         WorkspaceTab::InstructionReference => crate::ui::reference_view::draw(app, ui),
         WorkspaceTab::BuildOutput => crate::ui::build_output_view::draw(app, ui),
-        WorkspaceTab::Extensions => crate::ui::extensions_panel::draw(app, ui),
+        WorkspaceTab::NumberBaseConverter => crate::ui::number_base_view::draw(app, ui),
     });
 
     crate::ui::settings_screen::draw(app, ctx);

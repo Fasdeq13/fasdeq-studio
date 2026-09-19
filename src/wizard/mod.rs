@@ -88,7 +88,7 @@ impl WizardState {
             while let Ok(event) = receiver.try_recv() {
                 match event {
                     InstallEvent::Started(cmd) => {
-                        self.install_log.push(format!("▶ {cmd}"));
+                        self.install_log.push(format!("> {cmd}"));
                     }
                     InstallEvent::Line(line) => {
                         self.install_log.push(line);

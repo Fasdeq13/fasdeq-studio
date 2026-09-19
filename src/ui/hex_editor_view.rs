@@ -1,7 +1,42 @@
 use crate::app::FasdeqApp;
+use crate::disasm::binfile::{BinaryInfo, SectionCategory};
+use crate::disasm::hexview::{classify_byte, ByteKind};
+use crate::icons;
 use eframe::egui;
 
 const BYTES_PER_ROW: usize = 16;
+
+fn section_category_at(info: &Option<BinaryInfo>, offset: usize) -> Option<SectionCategory> {
+    let info = info.as_ref()?;
+    info.sections
+        .iter()
+        .find(|s| {
+            let start = s.file_offset as usize;
+            let end = start + s.size as usize;
+            offset >= start && offset < end
+        })
+        .map(|s| s.category())
+}
+
+fn color_for_byte(category: Option<SectionCategory>, kind: ByteKind, visuals: &egui::Visuals) -> egui::Color32 {
+    if let Some(category) = category {
+        match category {
+            SectionCategory::Code => return egui::Color32::from_rgb(206, 150, 255),
+            SectionCategory::ReadOnlyData => return egui::Color32::from_rgb(120, 200, 255),
+            SectionCategory::Data => return egui::Color32::from_rgb(140, 220, 150),
+            SectionCategory::Uninitialized => return egui::Color32::from_rgb(160, 160, 170),
+            SectionCategory::Debug => return egui::Color32::from_rgb(150, 150, 190),
+            SectionCategory::Linking => return egui::Color32::from_rgb(240, 190, 120),
+            SectionCategory::Other => {}
+        }
+    }
+    match kind {
+        ByteKind::Null => egui::Color32::from_rgb(90, 92, 105),
+        ByteKind::PrintableAscii => egui::Color32::from_rgb(140, 220, 150),
+        ByteKind::Whitespace => egui::Color32::from_rgb(120, 130, 150),
+        ByteKind::ControlOrHigh => visuals.text_color(),
+    }
+}
 
 pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
     let Some(file_path) = app.disasm_panel.file_path.clone() else {
@@ -16,19 +51,19 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let has_changes = app.disasm_panel.patches.has_changes();
             if ui
-                .add_enabled(has_changes, egui::Button::new("💾 Save In Place"))
+                .add_enabled(has_changes, egui::Button::new(format!("{}  Save In Place", icons::FLOPPY_DISK)))
                 .clicked()
             {
                 app.save_patched_binary_in_place();
             }
             if ui
-                .add_enabled(has_changes, egui::Button::new("📄 Save As Patched Copy"))
+                .add_enabled(has_changes, egui::Button::new(format!("{}  Save As Copy", icons::UPLOAD_SIMPLE)))
                 .clicked()
             {
                 app.save_patched_binary_as_copy();
             }
             if ui
-                .add_enabled(has_changes, egui::Button::new("↩ Revert All"))
+                .add_enabled(has_changes, egui::Button::new(format!("{}  Revert All", icons::ARROW_COUNTER_CLOCKWISE)))
                 .clicked()
             {
                 app.revert_all_patches();
@@ -48,6 +83,17 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
     if let Some(msg) = &app.disasm_panel.save_message {
         ui.label(egui::RichText::new(msg).weak());
     }
+
+    ui.add_space(6.0);
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new("Legend:").weak().size(11.0));
+        legend_dot(ui, egui::Color32::from_rgb(206, 150, 255), "code");
+        legend_dot(ui, egui::Color32::from_rgb(120, 200, 255), "rodata");
+        legend_dot(ui, egui::Color32::from_rgb(140, 220, 150), "data");
+        legend_dot(ui, egui::Color32::from_rgb(160, 160, 170), "bss");
+        legend_dot(ui, egui::Color32::from_rgb(240, 190, 120), "linking");
+        legend_dot(ui, egui::Color32::from_rgb(240, 180, 90), "patched");
+    });
 
     ui.add_space(8.0);
     ui.separator();
@@ -108,6 +154,11 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
                     if ui.button("Patch to NOP").clicked() {
                         app.apply_byte_patch(offset, 0x90);
                     }
+
+                    ui.add_space(16.0);
+                    ui.separator();
+                    ui.add_space(8.0);
+                    crate::ui::number_base_view::draw_compact(ui, current as u64, 8);
                 } else {
                     ui.label(egui::RichText::new("Select a byte to inspect it.").weak());
                 }
@@ -127,7 +178,7 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
                                 "0x{:08x}: {:02x} → {:02x}",
                                 patch.offset, patch.original, patch.new_value
                             ));
-                            if ui.small_button("↩").clicked() {
+                            if ui.small_button(icons::ARROW_COUNTER_CLOCKWISE).clicked() {
                                 app.revert_byte_patch(patch.offset);
                             }
                         });
@@ -142,6 +193,8 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
     let mut new_selection = selected_offset;
 
     let row_height = ui.text_style_height(&egui::TextStyle::Monospace);
+    let binary_info = app.disasm_panel.binary_info.clone();
+    let visuals = ui.visuals().clone();
 
     egui::ScrollArea::vertical().auto_shrink([false, false]).show_rows(
         ui,
@@ -167,7 +220,9 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
                         let color = if is_patched {
                             egui::Color32::from_rgb(240, 180, 90)
                         } else {
-                            ui.visuals().text_color()
+                            let category = section_category_at(&binary_info, offset);
+                            let kind = classify_byte(*byte);
+                            color_for_byte(category, kind, &visuals)
                         };
                         let text = egui::RichText::new(format!("{byte:02x}")).monospace().color(color);
                         if ui.selectable_label(is_selected, text).clicked() {
@@ -175,11 +230,16 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
                         }
                     }
                     ui.add_space(12.0);
-                    let ascii: String = row_bytes
-                        .iter()
-                        .map(|b| if *b >= 0x20 && *b < 0x7f { *b as char } else { '.' })
-                        .collect();
-                    ui.label(egui::RichText::new(ascii).monospace().weak());
+                    for (i, byte) in row_bytes.iter().enumerate() {
+                        let offset = offset_base + i;
+                        let ch = if *byte >= 0x20 && *byte < 0x7f { *byte as char } else { '.' };
+                        let color = color_for_byte(
+                            section_category_at(&binary_info, offset),
+                            classify_byte(*byte),
+                            &visuals,
+                        );
+                        ui.label(egui::RichText::new(ch.to_string()).monospace().color(color));
+                    }
                 });
             }
         },
@@ -189,4 +249,12 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
         app.disasm_panel.selected_byte_offset = new_selection;
         app.disasm_panel.byte_edit_input.clear();
     }
+}
+
+fn legend_dot(ui: &mut egui::Ui, color: egui::Color32, label: &str) {
+    ui.horizontal(|ui| {
+        let (rect, _) = ui.allocate_exact_size(egui::vec2(8.0, 8.0), egui::Sense::hover());
+        ui.painter().rect_filled(rect, 2.0, color);
+        ui.label(egui::RichText::new(label).size(10.0).weak());
+    });
 }

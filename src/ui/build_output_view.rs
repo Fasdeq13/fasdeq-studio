@@ -1,12 +1,13 @@
 use crate::app::FasdeqApp;
 use crate::editor::diagnostics::Severity;
+use crate::icons;
 use eframe::egui;
 
 pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new("Build Output").size(16.0).strong());
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button("▶ Build").clicked() {
+            if ui.button(format!("{}  Build", icons::PLAY)).clicked() {
                 app.run_build();
             }
         });
@@ -24,9 +25,9 @@ pub fn draw(app: &mut FasdeqApp, ui: &mut egui::Ui) {
         egui::ScrollArea::vertical().max_height(240.0).id_source("diag_scroll").show(ui, |ui| {
             for diag in &app.diagnostics {
                 let (icon, color) = match diag.severity {
-                    Severity::Error => ("✖", egui::Color32::from_rgb(240, 95, 92)),
-                    Severity::Warning => ("⚠", egui::Color32::from_rgb(240, 180, 90)),
-                    Severity::Note => ("ℹ", egui::Color32::from_rgb(150, 160, 180)),
+                    Severity::Error => (icons::X_CIRCLE, egui::Color32::from_rgb(240, 95, 92)),
+                    Severity::Warning => (icons::WARNING, egui::Color32::from_rgb(240, 180, 90)),
+                    Severity::Note => (icons::INFO, egui::Color32::from_rgb(150, 160, 180)),
                 };
                 ui.horizontal(|ui| {
                     ui.colored_label(color, icon);

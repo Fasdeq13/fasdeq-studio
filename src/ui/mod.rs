@@ -7,6 +7,7 @@ pub mod extensions_panel;
 pub mod file_tree;
 pub mod hex_editor_view;
 pub mod new_project;
+pub mod number_base_view;
 pub mod reference_view;
 pub mod settings_screen;
 pub mod start_menu;

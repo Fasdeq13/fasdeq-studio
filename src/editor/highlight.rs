@@ -2,7 +2,10 @@ use egui::text::LayoutJob;
 use egui::{Color32, FontId, TextFormat};
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Theme, ThemeSet};
-use syntect::parsing::{SyntaxReference, SyntaxSet};
+use syntect::parsing::{SyntaxDefinition, SyntaxReference, SyntaxSet};
+
+const TOML_SYNTAX: &str = include_str!("../../assets/syntaxes/toml.sublime-syntax");
+const ASM_SYNTAX: &str = include_str!("../../assets/syntaxes/asm.sublime-syntax");
 
 pub struct HighlightEngine {
     syntax_set: SyntaxSet,
@@ -11,8 +14,16 @@ pub struct HighlightEngine {
 
 impl HighlightEngine {
     pub fn new() -> Self {
+        let mut builder = SyntaxSet::load_defaults_newlines().into_builder();
+        if let Ok(syntax) = SyntaxDefinition::load_from_str(TOML_SYNTAX, true, None) {
+            builder.add(syntax);
+        }
+        if let Ok(syntax) = SyntaxDefinition::load_from_str(ASM_SYNTAX, true, None) {
+            builder.add(syntax);
+        }
+
         Self {
-            syntax_set: SyntaxSet::load_defaults_newlines(),
+            syntax_set: builder.build(),
             theme_set: ThemeSet::load_defaults(),
         }
     }

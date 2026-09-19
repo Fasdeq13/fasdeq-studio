@@ -1,0 +1,125 @@
+%YAML 1.2
+---
+name: TOML
+file_extensions:
+  - toml
+scope: source.toml
+
+contexts:
+  main:
+    - include: comments
+    - include: table-header
+    - include: key-value
+
+  comments:
+    - match: '#.*$'
+      scope: comment.line.number-sign.toml
+
+  table-header:
+    - match: '^\s*(\[\[)([^\]]+)(\]\])'
+      captures:
+        1: punctuation.definition.table.array.begin.toml
+        2: entity.name.section.toml
+        3: punctuation.definition.table.array.end.toml
+    - match: '^\s*(\[)([^\]]+)(\])'
+      captures:
+        1: punctuation.definition.table.begin.toml
+        2: entity.name.section.toml
+        3: punctuation.definition.table.end.toml
+
+  key-value:
+    - match: '([A-Za-z0-9_\-\.]+)(\s*)(=)'
+      captures:
+        1: variable.other.key.toml
+        3: keyword.operator.assignment.toml
+      push: value
+
+  value:
+    - match: '"""'
+      scope: punctuation.definition.string.begin.toml
+      push: triple-double-string
+    - match: "'''"
+      scope: punctuation.definition.string.begin.toml
+      push: triple-single-string
+    - match: '"'
+      scope: punctuation.definition.string.begin.toml
+      push: double-string
+    - match: "'"
+      scope: punctuation.definition.string.begin.toml
+      push: single-string
+    - match: '\btrue\b|\bfalse\b'
+      scope: constant.language.boolean.toml
+    - match: '\b\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?\b'
+      scope: constant.other.date.toml
+    - match: '[+-]?\b\d[\d_]*\.\d[\d_]*([eE][+-]?\d+)?\b'
+      scope: constant.numeric.float.toml
+    - match: '[+-]?\b(0x[0-9A-Fa-f_]+|0o[0-7_]+|0b[01_]+|\d[\d_]*)\b'
+      scope: constant.numeric.integer.toml
+    - match: '\['
+      scope: punctuation.definition.array.begin.toml
+      push: array
+    - match: '\{'
+      scope: punctuation.definition.inline-table.begin.toml
+      push: inline-table
+    - match: '$'
+      pop: true
+
+  triple-double-string:
+    - meta_scope: string.quoted.triple.toml
+    - match: '"""'
+      scope: punctuation.definition.string.end.toml
+      pop: true
+
+  triple-single-string:
+    - meta_scope: string.quoted.triple.toml
+    - match: "'''"
+      scope: punctuation.definition.string.end.toml
+      pop: true
+
+  double-string:
+    - meta_scope: string.quoted.double.toml
+    - match: '\\.'
+      scope: constant.character.escape.toml
+    - match: '"'
+      scope: punctuation.definition.string.end.toml
+      pop: true
+
+  single-string:
+    - meta_scope: string.quoted.single.toml
+    - match: "'"
+      scope: punctuation.definition.string.end.toml
+      pop: true
+
+  array:
+    - match: '\]'
+      scope: punctuation.definition.array.end.toml
+      pop: true
+    - include: value-inner
+
+  inline-table:
+    - match: '\}'
+      scope: punctuation.definition.inline-table.end.toml
+      pop: true
+    - include: value-inner
+
+  value-inner:
+    - match: '"'
+      scope: punctuation.definition.string.begin.toml
+      push: double-string
+    - match: "'"
+      scope: punctuation.definition.string.begin.toml
+      push: single-string
+    - match: '\btrue\b|\bfalse\b'
+      scope: constant.language.boolean.toml
+    - match: '[+-]?\b\d[\d_]*\.\d[\d_]*\b'
+      scope: constant.numeric.float.toml
+    - match: '[+-]?\b\d[\d_]*\b'
+      scope: constant.numeric.integer.toml
+    - match: '\['
+      scope: punctuation.definition.array.begin.toml
+      push: array
+    - match: '\{'
+      scope: punctuation.definition.inline-table.begin.toml
+      push: inline-table
+    - match: ','
+      scope: punctuation.separator.toml

@@ -22,6 +22,43 @@ pub fn all_mnemonics() -> Vec<&'static str> {
     INSTRUCTION_TABLE.iter().map(|i| i.mnemonic).collect()
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MnemonicCategory {
+    ControlFlow,
+    Stack,
+    Arithmetic,
+    Logic,
+    DataMove,
+    System,
+    Other,
+}
+
+pub fn categorize(mnemonic: &str) -> MnemonicCategory {
+    let m = mnemonic.to_lowercase();
+    let base = m.trim_start_matches("lock ").trim_start_matches("rep ").trim_start_matches("repe ").trim_start_matches("repne ");
+    match base {
+        "jmp" | "je" | "jne" | "jg" | "jl" | "jge" | "jle" | "ja" | "jb" | "jae" | "jbe"
+        | "jz" | "jnz" | "js" | "jns" | "jo" | "jno" | "jp" | "jnp" | "jcxz" | "jecxz"
+        | "jrcxz" | "call" | "ret" | "retf" | "loop" | "loope" | "loopne" => {
+            MnemonicCategory::ControlFlow
+        }
+        "push" | "pop" | "pushfq" | "popfq" | "pushf" | "popf" | "enter" | "leave" => {
+            MnemonicCategory::Stack
+        }
+        "add" | "sub" | "imul" | "idiv" | "mul" | "div" | "inc" | "dec" | "neg" | "adc"
+        | "sbb" | "cmp" => MnemonicCategory::Arithmetic,
+        "and" | "or" | "xor" | "not" | "shl" | "shr" | "sar" | "rol" | "ror" | "test"
+        | "bt" | "bts" | "btr" | "btc" => MnemonicCategory::Logic,
+        "mov" | "movzx" | "movsx" | "lea" | "xchg" | "cmpxchg" | "movs" | "stos" | "lods"
+        | "cdq" | "cwd" | "cbw" | "cdqe" => MnemonicCategory::DataMove,
+        "int" | "syscall" | "sysenter" | "sysexit" | "hlt" | "cli" | "sti" | "in" | "out"
+        | "lgdt" | "lidt" | "rdmsr" | "wrmsr" | "cpuid" | "nop" | "wait" | "lock" => {
+            MnemonicCategory::System
+        }
+        _ => MnemonicCategory::Other,
+    }
+}
+
 struct RawInstructionInfo {
     mnemonic: &'static str,
     summary: &'static str,

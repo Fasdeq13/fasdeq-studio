@@ -2,7 +2,9 @@ mod app;
 mod disasm;
 mod editor;
 mod extensions;
+mod icons;
 mod project;
+mod settings;
 mod theme;
 mod toolchain;
 mod ui;
@@ -17,6 +19,10 @@ struct RootApp {
 
 impl RootApp {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        let mut fonts = egui::FontDefinitions::default();
+        egui_phosphor::add_to_fonts(&mut fonts, egui_phosphor::Variant::Regular);
+        cc.egui_ctx.set_fonts(fonts);
+
         let inner = FasdeqApp::new();
         inner.apply_theme(&cc.egui_ctx);
 
@@ -37,6 +43,7 @@ impl eframe::App for RootApp {
             AppScreen::StartMenu => ui::start_menu::draw(&mut self.inner, ctx),
             AppScreen::NewProjectMenu => ui::new_project::draw(&mut self.inner, ctx),
             AppScreen::CloneProject => ui::clone_screen::draw(&mut self.inner, ctx),
+            AppScreen::ExtensionsMenu => ui::extensions_panel::draw(&mut self.inner, ctx),
             AppScreen::Workspace => ui::workspace_screen::draw(&mut self.inner, ctx),
         }
     }

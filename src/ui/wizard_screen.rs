@@ -1,6 +1,7 @@
 use crate::app::{AppScreen, FasdeqApp};
 use crate::editor::keybindings::KeymapStyle;
 use crate::theme::FasdeqTheme;
+use crate::icons;
 use crate::wizard::WizardStage;
 use eframe::egui;
 
@@ -69,7 +70,7 @@ fn draw_tool_summary(app: &mut FasdeqApp, ui: &mut egui::Ui) {
         .spacing([20.0, 8.0])
         .show(ui, |ui| {
             for tool in &app.wizard.tools {
-                let icon = if tool.found { "✅" } else { "❌" };
+                let icon = if tool.found { icons::CHECK_CIRCLE } else { icons::X_CIRCLE };
                 ui.label(icon);
                 ui.label(tool.kind.display_name());
                 if let Some(version) = &tool.version {
@@ -220,8 +221,10 @@ fn draw_keymap_choice(app: &mut FasdeqApp, ui: &mut egui::Ui) {
     if ui.button(egui::RichText::new("Finish setup").size(16.0)).clicked() {
         app.theme = app.wizard.chosen_theme.clone();
         app.keymap = app.wizard.chosen_keymap;
+        app.custom_theme_path = app.wizard.custom_theme_path.clone();
         app.toolchain_config.setup_completed = true;
         let _ = app.toolchain_config.save();
+        app.save_preferences();
         app.wizard.stage = WizardStage::Done;
     }
 }
